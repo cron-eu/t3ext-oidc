@@ -25,6 +25,9 @@ if (!(empty($_GET['state']) || empty($_GET['code']))) {
         // Rely on HTTP Host header, which contains non-standard ports as well
         $currentUrl = $schema . $_SERVER['HTTP_HOST'];
     }
+    if ($_SERVER['SERVER_PORT'] !== '80' && $_SERVER['SERVER_PORT'] !== '443') {
+        $currentUrl .= ':' . $_SERVER['SERVER_PORT'];
+    }
     $currentUrl .= $_SERVER['REQUEST_URI'];
 
     if (($pos = strpos($currentUrl, 'typo3conf/ext/oidc/Resources/Public/callback.php')) !== false) {
