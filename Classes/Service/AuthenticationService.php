@@ -24,7 +24,10 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
+use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\ServerRequestFactory;
+use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Core\Routing\RouteNotFoundException;
 use TYPO3\CMS\Core\Routing\SiteMatcher;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -737,7 +740,15 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AuthenticationService
             $siteMatcher = GeneralUtility::makeInstance(SiteMatcher::class);
             $routeResult = $siteMatcher->matchRequest($request);
             $site = $routeResult->getSite();
-            $pageArguments = $site->getRouter()->matchRequest($request, $routeResult);
+            try {
+                $pageArguments = $site->getRouter()->matchRequest($request, $routeResult);
+            } catch (RouteNotFoundException $e) {
+                // in 404 case try again without query url
+                $request = new ServerRequest(new Uri(GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST')), 'GET', null, [], $_SERVER);
+                $routeResult = $siteMatcher->matchRequest($request);
+                $pageArguments = $site->getRouter()->matchRequest($request, $routeResult);
+            }
+
             $currentPage = $pageArguments->getPageId();
 
             $frontendUser = GeneralUtility::makeInstance(FrontendUserAuthentication::class);
